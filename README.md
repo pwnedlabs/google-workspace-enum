@@ -4,6 +4,12 @@ A Python-based tool to enumerate Google Workspace data using OAuth2 authorizatio
 
 ---
 
+## ⚠️ Warning
+
+Use only on accounts and domains you have permission to test. This tool is for **educational and authorized auditing purposes only**.
+
+---
+
 ## 🚀 Features
 
 - 🔐 OAuth2 Authorization with multiple scopes
@@ -111,11 +117,6 @@ This will:
 
 ---
 
-## ⚠️ Warning
-
-Use only on accounts and domains you have permission to test. This tool is for **educational and authorized auditing purposes only**.
-
----
 
 ## 📄 License
 
