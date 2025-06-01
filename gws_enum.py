@@ -38,6 +38,8 @@ SCOPES = [
     'https://www.googleapis.com/auth/spreadsheets.readonly',
     'https://www.googleapis.com/auth/presentations.readonly',
     'https://www.googleapis.com/auth/documents.readonly',
+    'https://www.googleapis.com/auth/cloud-platform.read-only',
+    'https://www.googleapis.com/auth/cloud-platform',
 ]
 
 console.print(Panel(f"[bold green]📦 GWS + GCP Enumeration Started[/] @ [cyan]{now}[/]", box=box.DOUBLE))
