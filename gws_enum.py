@@ -1,3 +1,4 @@
+
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
@@ -244,6 +245,89 @@ def analyze_gmail():
 
     except Exception as e:
         console.print(f"[red][!][/red] Gmail analysis error: {e}")
+
+
+def search_gmail_for_keywords(keywords):
+    console.print(f"\n[bold cyan]🔍 Searching Gmail for Keywords: {', '.join(keywords)}[/]")
+    gmail = build('gmail', 'v1', credentials=creds)
+
+    found_messages = []
+    query_string = " OR ".join(keywords) # Builds a query like "password OR aws OR secret"
+
+    try:
+        page_token = None
+        while True:
+            # Search for messages matching the query
+            response = gmail.users().messages().list(
+                userId='me',
+                q=query_string,
+                pageToken=page_token
+            ).execute()
+            
+            messages = response.get('messages', [])
+            if not messages:
+                break
+
+            for message_item in track(messages, description=f"Fetching details for {len(messages)} messages..."):
+                try:
+                    msg = gmail.users().messages().get(userId='me', id=message_item['id'], format='full').execute()
+                    
+                    # Extract subject and sender
+                    headers = msg['payload']['headers']
+                    subject = next((header['value'] for header in headers if header['name'] == 'Subject'), 'No Subject')
+                    sender = next((header['value'] for header in headers if header['name'] == 'From'), 'Unknown Sender')
+
+                    found_messages.append({
+                        'id': msg['id'],
+                        'snippet': msg.get('snippet', 'No snippet available.'),
+                        'subject': subject,
+                        'sender': sender,
+                        'link': f"https://mail.google.com/mail/u/0/#inbox/{msg['id']}" # Direct link to message
+                    })
+                except HttpError as error:
+                    console.print(f"[yellow][-][/yellow] An error occurred fetching message {message_item['id']}: {error}")
+                except Exception as e:
+                    console.print(f"[red][!][/red] Error processing message {message_item['id']}: {e}")
+
+            page_token = response.get('nextPageToken', None)
+            if not page_token:
+                break
+
+        if found_messages:
+            output_file = loot_gmail / f"keyword_search_results_{now.replace(':', '-')}.json"
+            with open(output_file, "w") as f:
+                json.dump(found_messages, f, indent=2)
+            console.print(f"[green][+][/green] Found [bold]{len(found_messages)}[/bold] messages containing keywords. Results saved to '{output_file}'")
+
+            # Display a summary table
+            table = Table(title="Gmail Keyword Search Results (Summary)", box=box.ROUNDED)
+            table.add_column("Subject", style="cyan", max_width=50)
+            table.add_column("Sender", style="green", max_width=30)
+            table.add_column("Snippet", style="yellow", max_width=80)
+            table.add_column("Link", style="magenta")
+
+            for i, msg in enumerate(found_messages[:10]): # Show top 10 in console
+                table.add_row(
+                    msg['subject'],
+                    msg['sender'],
+                    msg['snippet'],
+                    msg['link']
+                )
+                if i == 9 and len(found_messages) > 10:
+                    console.print("[yellow]... (showing top 10 results, full results in JSON file)[/yellow]")
+            console.print(table)
+
+
+        else:
+            console.print("[green][+][/green] No messages found containing the specified keywords.")
+
+    except HttpError as error:
+        console.print(f"[red][!][/red] An HTTP error occurred during Gmail search: {error}")
+        console.print(f"Consider checking your Gmail API quota or permissions.")
+    except Exception as e:
+        console.print(f"[red][!][/red] An error occurred during Gmail keyword search: {e}")
+
+
 
 # --- Google Groups Analysis ---
 def analyze_groups():
@@ -994,19 +1078,41 @@ def enhanced_analyze_gcp():
 
 
 # --- Execute Analysis Functions ---
-analyze_drive()
-analyze_gmail()
-analyze_groups()
-analyze_sites()
-analyze_shared_drives()
-analyze_workspace_docs() # Call the new workspace docs analysis
-analyze_contacts() # Call the contacts analysis
-enhanced_analyze_gcp() # Call the enhanced GCP analysis
+if __name__ == "__main__":
+    import argparse
 
-# --- Final Summary ---
-console.print(Panel(
-    "[bold green]✅ Enhanced enumeration complete![/]\n"
-    "All data saved in [bold yellow]./loot/[/] directory\n"
-    "[cyan]Tip:[/] Review the JSON files and downloaded content for detailed information",
-    box=box.HEAVY
-))
+    parser = argparse.ArgumentParser(description="Enhanced Google Workspace + GCP Enumeration Tool")
+    parser.add_argument("--module", help="Specify which module to run (e.g., gmail, drive, groups, sites, shared_drives, docs, contacts).")
+    parser.add_argument("--search", help="Keyword(s) to search for when using the 'gmail' module, separated by commas.") # New argument for search
+
+    args = parser.parse_args()
+
+    if args.module == "gmail":
+        if args.search:
+            keywords = [k.strip() for k in args.search.split(',')]
+            search_gmail_for_keywords(keywords)
+        else:
+            analyze_gmail() # Run general gmail analysis if no search keyword is provided
+    elif args.module == "drive":
+        analyze_drive()
+    elif args.module == "groups":
+        analyze_groups()
+    elif args.module == "sites":
+        analyze_sites()
+    elif args.module == "shared_drives":
+        analyze_shared_drives()
+    elif args.module == "docs":
+        analyze_workspace_docs()
+    elif args.module == "contacts":
+        analyze_contacts()
+    else:
+        console.print("[bold red]Please specify a valid module to run (e.g., --module gmail).[/bold red]")
+        console.print("[bold yellow]Running all modules for comprehensive analysis...[/bold yellow]")
+        analyze_drive()
+        analyze_gmail()
+        analyze_groups()
+        analyze_sites()
+        analyze_shared_drives()
+        analyze_workspace_docs()
+        analyze_contacts()
+        enhanced_analyze_gcp()
