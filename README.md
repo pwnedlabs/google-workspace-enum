@@ -65,6 +65,7 @@ Go to [Credentials Page](https://console.cloud.google.com/apis/credentials):
 - Download `client_secrets.json`
 
 3. **Place `client_secrets.json` in the same directory as your script**
+4. Go to Audience page in your Credential page (GCP) and add your target as a test user. 
 
 ---
 
