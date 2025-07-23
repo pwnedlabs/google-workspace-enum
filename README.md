@@ -57,6 +57,10 @@ pip install rich requests google-auth google-auth-oauthlib google-api-python-cli
    - [Google Keep API](https://console.cloud.google.com/apis/library/keep.googleapis.com)
    - [Cloud Resource Manager API](https://console.cloud.google.com/apis/library/cloudresourcemanager.googleapis.com)
 
+```
+$ gcloud services enable drive.googleapis.com gmail.googleapis.com people.googleapis.com calendar-json.googleapis.com tasks.googleapis.com keep.googleapis.com cloudresourcemanager.googleapis.com
+```
+
 2. **Create OAuth 2.0 Client ID:**
 
 Go to [Credentials Page](https://console.cloud.google.com/apis/credentials):
